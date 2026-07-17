@@ -1,8 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 export const config = { maxDuration: 60 };
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -17,13 +13,20 @@ export default async function handler(req, res) {
   const stagesText = stages.join(" and ");
 
   try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 3000,
-      messages: [
-        {
-          role: "user",
-          content: `You are a content strategist for Finny, an AI-first personal finance app for young Indians (20s-30s) focused on FIRE (Financial Independence, Retire Early).
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://finny-content-engine.vercel.app",
+        "X-Title": "Finny Content Engine",
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-3.3-70b-instruct:free",
+        messages: [
+          {
+            role: "user",
+            content: `You are a content strategist for Finny, an AI-first personal finance app for young Indians (20s-30s) focused on FIRE (Financial Independence, Retire Early).
 
 BRAND VOICE: Direct, plain language, occasionally cheeky, never preachy, never corporate jargon. Sound like a sharp friend explaining something, not a brand talking at someone.
 
@@ -62,14 +65,18 @@ Return ONLY a JSON array with no extra text or markdown fences:
 ]
 
 Important: Every hook must clearly match the declared awareness stage. Every script must sound like Finny's voice (direct, plain, a little cheeky). No em dashes anywhere.`,
-        },
-      ],
+          },
+        ],
+      }),
     });
 
-    let rawText = "";
-    for (const block of response.content) {
-      if (block.type === "text") rawText += block.text;
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenRouter error ${response.status}: ${errText.slice(0, 300)}`);
     }
+
+    const data = await response.json();
+    const rawText = data.choices?.[0]?.message?.content || "";
 
     let jsonText = rawText.trim();
     jsonText = jsonText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
