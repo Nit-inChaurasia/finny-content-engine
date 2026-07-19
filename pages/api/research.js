@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         "X-Title": "Finny Content Engine",
       },
       body: JSON.stringify({
-model: "qwen/qwen-2.5-72b-instruct:free",
+model: "deepseek/deepseek-chat:free",
         messages: [
           {
             role: "user",
