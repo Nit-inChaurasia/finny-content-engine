@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         "X-Title": "Finny Content Engine",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
+        model: "meta-llama/llama-3.3-70b-instruct:free",
         messages: [
           {
             role: "user",
